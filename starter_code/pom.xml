@@ -64,13 +64,6 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>commons-logging-api</groupId>
-            <artifactId>commons-logging-api</artifactId>
-            <scope>system</scope>
-            <version>1.0</version>
-            <systemPath>${project.basedir}/src/main/resources/lib/commons-logging-api</systemPath>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
