@@ -1,10 +1,12 @@
 package com.example.demo.controllers;
 
-import java.util.Optional;
 
+import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,13 +22,17 @@ import com.example.demo.model.requests.CreateUserRequest;
 
 @RestController
 @RequestMapping("/api/user")
+@Log4j2
 public class UserController {
+
+	@Autowired
+	public UserRepository userRepository;
 	
 	@Autowired
-	private UserRepository userRepository;
-	
+	public CartRepository cartRepository;
+
 	@Autowired
-	private CartRepository cartRepository;
+	public BCryptPasswordEncoder bCryptPasswordEncoder;
 
 	@GetMapping("/id/{id}")
 	public ResponseEntity<User> findById(@PathVariable Long id) {
@@ -36,18 +42,27 @@ public class UserController {
 	@GetMapping("/{username}")
 	public ResponseEntity<User> findByUserName(@PathVariable String username) {
 		User user = userRepository.findByUsername(username);
-		return user == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(user);
+		return user == null ?
+				ResponseEntity.notFound().build() : ResponseEntity.ok(user);
 	}
 	
 	@PostMapping("/create")
 	public ResponseEntity<User> createUser(@RequestBody CreateUserRequest createUserRequest) {
 		User user = new User();
 		user.setUsername(createUserRequest.getUsername());
+		log.info("User name set with ", createUserRequest.getUsername());
 		Cart cart = new Cart();
 		cartRepository.save(cart);
 		user.setCart(cart);
+		if (createUserRequest.getPassword().length() < 7 ||
+			!createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())) {
+			log.warn("Create user request failed: " + user.getUsername());
+			return ResponseEntity.badRequest().build();
+		}
+		user.setPassword(bCryptPasswordEncoder.encode(createUserRequest.getPassword()));
 		userRepository.save(user);
+
+		log.info("Create user request successes: " + user.getUsername());
 		return ResponseEntity.ok(user);
 	}
-	
 }
